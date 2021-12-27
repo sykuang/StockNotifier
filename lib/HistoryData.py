@@ -1,37 +1,19 @@
 #!/usr/bin/env python3
 
 from FinMind.data import DataLoader
-from os import environ
 import logging
 from datetime import datetime, timedelta
-
+from Singleton import Singleton
 import pandas
 
 
-class HistoryData:
-    __instance = None
-    _token = None
+class HistoryData(metaclass=Singleton):
+    def __init__(self, token=None):
+        self.api = DataLoader()
+        self.api.login_by_token(api_token=token)
 
-    def __new__(cls):
-        if cls.__instance is None:
-            cls.__instance = super().__new__(cls)
-            cls.__instance.__initialized = False
-        return cls.__instance
-
-    def __init__(self):
-        if self.__initialized:
-            return
-        self.__initialized = True
         logging.basicConfig()
-        self._log = logging.getLogger("HistoryData")
-        try:
-            env_token = environ["FINMIND_TOKEN"]
-        except:
-            self._log.warning("FINMIND_TOKEN token is not defined in envroiments")
-            pass
-        else:
-            self.api = DataLoader()
-            self.api.login_by_token(api_token=env_token)
+        self._log = logging.getLogger(self.__class__.__name__)
 
     def setDebug(self):
         self._log.setLevel(logging.DEBUG)
@@ -54,9 +36,16 @@ class HistoryData:
 
 
 if __name__ == "__main__":
+    from os import environ
     log = logging.getLogger("main")
     log.setLevel(logging.DEBUG)
-    history = HistoryData()
+    try:
+        env_token = environ["FINMIND_TOKEN"]
+        history = HistoryData(env_token)
+    except:
+        log.warning("FINMIND_TOKEN token is not defined in envroiments")
+        history = HistoryData()
+
     history.setDebug()
     MA = history.getMA("2454")
     log.info(MA)
