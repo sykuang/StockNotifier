@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from os import environ
+from time import sleep
 from lib.LineNotifier import LineNotifier
 from lib.StockMonitor import StockMonitor
 from lib.HistoryData import HistoryData
@@ -15,6 +16,7 @@ if __name__ == "__main__":
     line_token = environ["LINE_TOKEN"]
     fugle_token = environ["FUGLE_TOKEN"]
     notifier = LineNotifier(line_token)
+    monitiors=[]
     for symbol in symbols:
         log.info(symbol)
         history = HistoryData(finmind_token)
@@ -23,4 +25,9 @@ if __name__ == "__main__":
         monitior = StockMonitor(notifier, symbol, MA +20, fugle_token)
         monitior.setDebug()
         monitior.Monitor()
-    pass
+        monitiors.append(monitior)
+    # Run only 8 hours
+    sleep(60*60*8)
+    log.debug("exit")
+    for monitior in monitiors:
+        monitior.quit()

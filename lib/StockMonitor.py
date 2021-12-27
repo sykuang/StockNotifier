@@ -63,6 +63,11 @@ class StockMonitor:
     def setDebug(self):
         self._log.setLevel(logging.DEBUG)
 
+    def quit(self):
+        if self._ws != None:
+            self._ws.close()
+            self._ws = None
+
     def __del__(self):
         if self._ws != None:
             self._ws.close()
