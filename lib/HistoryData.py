@@ -3,8 +3,8 @@
 from FinMind.data import DataLoader
 import logging
 from datetime import datetime, timedelta
-from Singleton import Singleton
 import pandas
+from .Singleton import Singleton
 
 
 class HistoryData(metaclass=Singleton):
@@ -32,7 +32,7 @@ class HistoryData(metaclass=Singleton):
 
     def getMA(self, symbol: str):
         data = self.getData(symbol)
-        return self._getMA(data["close"])
+        return self._getMA(data["close"]).iloc[-1]
 
 
 if __name__ == "__main__":

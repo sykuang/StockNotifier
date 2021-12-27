@@ -6,28 +6,35 @@ import json
 
 
 class StockMonitor:
-    def __init__(self, Notifier, symbol: str, price, token="demo"):
+    _ws = None
+
+    def __init__(self, Notifier, symbol: str, price: float, token="demo"):
+        logging.basicConfig()
+        self._log = logging.getLogger(self.__class__.__name__)
+
         self._notifier = Notifier
         self._symbol = symbol
         self._price = price
         self._token = token
         self._notified = False
 
-    def setPrice(self, price: int):
+    def setPrice(self, price: float):
         self._price = price
 
     def Monitor(self):
         ws_client = WebSocketClient(api_token=self._token)
-        notifer = self._notifier
+        notifier = self._notifier
         target_price = self._price
         notified = self._notified
+        log = self._log
 
         def handle_message(msg):
             nonlocal notified
             if notified:
                 return
-            nonlocal notifer
+            nonlocal notifier
             nonlocal target_price
+            nonlocal log
             msg = json.loads(msg)
             info_type = msg["data"]["info"]["type"]
             if info_type == "EQUITY":
@@ -35,10 +42,17 @@ class StockMonitor:
             symbol = msg["data"]["info"]["symbolId"]
             try:
                 price = msg["data"]["quote"]["trade"]["price"]
+                log.debug(
+                    "Symbol %s is $%.2f Target %.2f" % (symbol, price, target_price)
+                )
                 if price <= target_price:
-                    notifier.sendMsg("%s is $%.2f now!" % (symbol, price))
+                    MSG = "%s is $%.2f now!" % (symbol, price)
+                    log.info("sendMSG:%s" % MSG)
+                    notifier.sendMsg(MSG)
+                    notified = True
             except:
-                pass
+                log.error("except")
+                raise
 
             # notifer.sendMsg(msg)
 
@@ -46,8 +60,11 @@ class StockMonitor:
         self._ws = ws
         ws.run_async()
 
+    def setDebug(self):
+        self._log.setLevel(logging.DEBUG)
+
     def __del__(self):
-        if self._ws:
+        if self._ws != None:
             self._ws.close()
 
 
