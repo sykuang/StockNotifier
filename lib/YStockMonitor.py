@@ -1,4 +1,5 @@
 import yfinance as yf
+
 try:
     from StockMonitor import StockMonitor
 except:
@@ -9,7 +10,8 @@ import logging
 from time import sleep
 import threading
 
-
+lock = threading.Lock()
+glog = logging.getLogger("getPrice")
 class YStockMonitor(StockMonitor):
     @staticmethod
     def getPrice(symbol, handlers, debug=False):
@@ -17,22 +19,31 @@ class YStockMonitor(StockMonitor):
             start_date = datetime.now() - timedelta(days=8)
         else:
             start_date = datetime.now() - timedelta(days=1)
-        data = yf.download(
-            tickers=symbol,
-            start=start_date,
-            group_by="ticker",
-            auto_adjust=False,
-            progress=False,
-        )
-        if len(data):
-            price = data["Close"].iloc[-1]
-            for h in handlers:
-                h.notify(price)
-        # Update data every 30 seconds
-        sleep(30)
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            loop.call_soon(YStockMonitor.getPrice,symbol,handlers,debug)
+        try:
+            lock.acquire()
+            data = yf.download(
+                tickers=symbol,
+                start=start_date,
+                group_by="ticker",
+                auto_adjust=False,
+                progress=False,
+            )
+            lock.release()
+            if len(data):
+                price = data["Close"].iloc[-1]
+                for h in handlers:
+                    h.notify(price)
+        except KeyError:
+            glog.error("Error keyerror skip!")
+        except Exception as e:
+            glog.error("Error:%s" % str(e))
+            pass
+        finally:
+            # Update data every 30 seconds
+            sleep(30)
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.call_soon(YStockMonitor.getPrice, symbol, handlers, debug)
 
     def _monitor(self) -> None:
         self._log.info("start monitor")

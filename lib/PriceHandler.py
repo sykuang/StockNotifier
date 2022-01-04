@@ -2,12 +2,13 @@ from lib.LineNotifier import LineNotifier
 import logging
 
 class PriceHandeler:
-    def __init__(self, notifier: LineNotifier, symbol, price: float, compare:str)->None:
+    def __init__(self, notifier: LineNotifier, symbol, price: float, compare:str,condition:str)->None:
         self.compare = compare
         self.target_price = price
         self.symbol = symbol
         self.notifier = notifier
         self.notified=False
+        self.condition=condition
         logging.basicConfig()
         self._log = logging.getLogger(self.__class__.__name__)
         self._log.setLevel(logging.INFO)
@@ -36,7 +37,7 @@ class PriceHandeler:
 
     def notify(self, price):
         if self.__shouldNotify(price):
-            MSG = "%s is $%.2f now!" % (self.symbol, price)
+            MSG = "%s is $%.2f now!(condition:%s)" % (self.symbol, price,self.condition)
             self._log.info("sendMSG:%s" % MSG)
             self.notifier.sendMsg(MSG)
             self.notified=True
