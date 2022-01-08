@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import logging
 from time import sleep
 import threading
+from pandas import to_datetime
 
 lock = threading.Lock()
 glog = logging.getLogger("getPrice")
@@ -30,9 +31,14 @@ class YStockMonitor(StockMonitor):
             )
             lock.release()
             if len(data):
-                price = data["Close"].iloc[-1]
-                for h in handlers:
-                    h.notify(price)
+                trade_date=to_datetime(data.index.values[-1])
+                today=datetime.today()
+                if trade_date>=today:
+                    price = data["Close"].iloc[-1]
+                    for h in handlers:
+                        h.notify(price)
+                else:
+                    glog.warning("Data(%s) is old;Today is %s"%(trade_date,today))
         except KeyError:
             glog.error("Error keyerror skip!")
         except Exception as e:
