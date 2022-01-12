@@ -1,8 +1,8 @@
-from lib.LineNotifier import LineNotifier
+from lib.Notifier import Notifier
 import logging
 
 class PriceHandeler:
-    def __init__(self, notifier: LineNotifier, symbol, price: float, compare:str,condition:str)->None:
+    def __init__(self, notifier: Notifier, symbol, price: float, compare:str,condition:str)->None:
         self.compare = compare
         self.target_price = price
         self.symbol = symbol

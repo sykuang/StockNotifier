@@ -27,5 +27,5 @@ if __name__ == "__main__":
     log = logging.getLogger("main")
     log.setLevel(logging.DEBUG)
     notify = LineNotifier(environ["LINE_TOKEN"])
-    notify.sendMSG("hi")
+    notify.sendMsg("hi")
     pass

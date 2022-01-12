@@ -5,7 +5,7 @@ try:
 except:
     from .StockMonitor import StockMonitor
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,timezone
 import logging
 from time import sleep
 import threading
@@ -32,8 +32,13 @@ class YStockMonitor(StockMonitor):
             lock.release()
             if len(data):
                 trade_date=to_datetime(data.index.values[-1])
-                today=datetime.today()
-                if trade_date>=today:
+                # Workaround to guess if stock is TW or US
+                if ".tw" in symbol:
+                    tz=timezone(timedelta(hours=8))
+                else:
+                    tz=timezone(timedelta(hours=-5))
+                today=datetime.now(tz)
+                if trade_date.date()>=today.date():
                     price = data["Close"].iloc[-1]
                     for h in handlers:
                         h.notify(price)

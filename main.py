@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-from os import environ
 from time import sleep
-from typing import final
 from lib.LineNotifier import LineNotifier
 from lib.PriceHandler import PriceHandeler
 from lib.HistoryData import TWHistoryData, USHistoryData
+from lib.TGNotifier import TGNotifier
 import logging
 import json
 import argparse
@@ -76,6 +75,24 @@ def main():
         log.info("Target price of %s is %s %.2f" % (symbol, compare, target_p))
         if "line" in stock:
             notifier = LineNotifier(stock["line"])
+            handler = PriceHandeler(
+                notifier,
+                symbol,
+                compare=compare,
+                price=target_p,
+                condition=stock["target"],
+            )
+            if args.country == "tw":
+                symbol = symbol + ".tw"
+            try:
+                mon = monitiors[symbol]
+            except KeyError:
+                monitiors[symbol] = YStockMonitor(symbol)
+                mon = monitiors[symbol]
+            finally:
+                mon.setHandler(handler)
+        if "TG_BOT" in stock:
+            notifier=TGNotifier(stock["TG_BOT"],stock["TG_USER"])
             handler = PriceHandeler(
                 notifier,
                 symbol,
