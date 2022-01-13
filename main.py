@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from time import sleep
+from typing import final
 from lib.LineNotifier import LineNotifier
 from lib.PriceHandler import PriceHandeler
 from lib.HistoryData import TWHistoryData, USHistoryData
@@ -84,15 +85,15 @@ def main():
             )
             if args.country == "tw":
                 symbol = symbol + ".tw"
-            try:
+
+            if symbol in monitiors:
                 mon = monitiors[symbol]
-            except KeyError:
+            else:
                 monitiors[symbol] = YStockMonitor(symbol)
                 mon = monitiors[symbol]
-            finally:
-                mon.setHandler(handler)
+            mon.setHandler(handler)
         if "TG_BOT" in stock:
-            notifier=TGNotifier(stock["TG_BOT"],stock["TG_USER"])
+            notifier = TGNotifier(stock["TG_BOT"], stock["TG_USER"])
             handler = PriceHandeler(
                 notifier,
                 symbol,
@@ -100,22 +101,28 @@ def main():
                 price=target_p,
                 condition=stock["target"],
             )
+            # Transfer symbol for Yahoo finance
             if args.country == "tw":
                 symbol = symbol + ".tw"
-            try:
+            if symbol in monitiors:
                 mon = monitiors[symbol]
-            except KeyError:
+            else:
                 monitiors[symbol] = YStockMonitor(symbol)
                 mon = monitiors[symbol]
-            finally:
-                mon.setHandler(handler)
+            mon.setHandler(handler)
     for m in monitiors.values():
         m.monitor()
-    # Run only 8 hours
-    log.debug("exit")
-    sleep(60 * 60 * 8)
-    for m in monitiors.values():
-        m.quit()
+    try:
+        # Run only 8 hours
+        sleep(60 * 60 * 8)
+    except KeyboardInterrupt:
+        pass
+    except Exception as e:
+        log.error(e)
+    finally:
+        log.debug("exit")
+        for m in monitiors.values():
+            m.quit()
 
 
 if __name__ == "__main__":

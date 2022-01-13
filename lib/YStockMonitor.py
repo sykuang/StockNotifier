@@ -5,14 +5,15 @@ try:
 except:
     from .StockMonitor import StockMonitor
 import asyncio
-from datetime import datetime, timedelta,timezone
+from datetime import datetime, timedelta, timezone
 import logging
-from time import sleep
 import threading
 from pandas import to_datetime
 
 lock = threading.Lock()
 glog = logging.getLogger("getPrice")
+
+
 class YStockMonitor(StockMonitor):
     @staticmethod
     def getPrice(symbol, handlers, debug=False):
@@ -31,19 +32,19 @@ class YStockMonitor(StockMonitor):
             )
             lock.release()
             if len(data):
-                trade_date=to_datetime(data.index.values[-1])
+                trade_date = to_datetime(data.index.values[-1])
                 # Workaround to guess if stock is TW or US
                 if ".tw" in symbol:
-                    tz=timezone(timedelta(hours=8))
+                    tz = timezone(timedelta(hours=8))
                 else:
-                    tz=timezone(timedelta(hours=-5))
-                today=datetime.now(tz)
-                if trade_date.date()>=today.date():
+                    tz = timezone(timedelta(hours=-5))
+                today = datetime.now(tz)
+                if trade_date.date() >= today.date():
                     price = data["Close"].iloc[-1]
                     for h in handlers:
                         h.notify(price)
                 else:
-                    glog.warning("Data(%s) is old;Today is %s"%(trade_date,today))
+                    glog.warning("Data(%s) is old;Today is %s" % (trade_date, today))
         except KeyError:
             glog.error("Error keyerror skip!")
         except Exception as e:
@@ -51,10 +52,8 @@ class YStockMonitor(StockMonitor):
             pass
         finally:
             # Update data every 30 seconds
-            sleep(30)
             loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.call_soon(YStockMonitor.getPrice, symbol, handlers, debug)
+            loop.call_later(30, YStockMonitor.getPrice, symbol, handlers, debug)
 
     def _monitor(self) -> None:
         self._log.info("start monitor")
@@ -62,7 +61,10 @@ class YStockMonitor(StockMonitor):
         self.loop.call_soon(
             YStockMonitor.getPrice, self.symbol, self.handlers, self.debug
         )
-        self.loop.run_forever()
+        try:
+            self.loop.run_forever()
+        finally:
+            self.loop.close()
 
     def monitor(self):
         self._run_thread = threading.Thread(target=self._monitor)
@@ -75,6 +77,8 @@ class YStockMonitor(StockMonitor):
 
 
 if __name__ == "__main__":
+    from time import sleep
+
     log = logging.getLogger("main")
     log.setLevel(logging.DEBUG)
     stock = YStockMonitor("2454.tw")
