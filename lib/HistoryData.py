@@ -68,7 +68,7 @@ class HistoryData:
         self.api.setDebug()
 
     def getBBANDS(self, symbol: str, days=20):
-        data = self.getData(symbol, days + 10)
+        data = self.getData(symbol, days + 30)
         return talib.BBANDS(data, timeperiod=days, nbdevup=2, nbdevdn=2, matype=0)
 
     def getPrice(self,strategy,symbol):
