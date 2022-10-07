@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from time import sleep
-from typing import final
 from lib.LineNotifier import LineNotifier
 from lib.PriceHandler import PriceHandeler
 from lib.HistoryData import TWHistoryData, USHistoryData
@@ -9,11 +8,13 @@ import logging
 import json
 import argparse
 import re
-
+from os import exist
 from lib.YStockMonitor import YStockMonitor
 
 logging.basicConfig()
 log = logging.getLogger("main")
+
+monitiors = {}
 
 
 def getTargetPrice(price: str):
@@ -26,29 +27,71 @@ def getTargetPrice(price: str):
     return g
 
 
-def main():
-    log.setLevel(logging.DEBUG)
+def getArgs():
     parser = argparse.ArgumentParser()
     parser.add_argument("country", help="Stock contory", choices=["tw", "us"])
+    parser.add_argument("--line_token", type=str, defaut="")
+    parser.add_argument("--tg_token", type=str, default="")
+    parser.add_argument("--tg_user", type=str, default="")
+    parser.add_argument("config", help="path to config file", type=str)
     parser.add_argument("--finmind_token", type=str, default=None)
-    parser.add_argument("--line_token", type=str)
     args = parser.parse_args()
-    finmind_token = args.finmind_token
+    if not exist(args.conifg):
+        print("%s not exist!")
+        exit(1)
+    return args
 
-    with open("config.json", "r") as f:
+
+def startNotifier(
+    tokens: dict, symbol: str, target_price: str, compare: str, target: str
+):
+    # Add symbol to monitors
+    if symbol not in monitiors:
+        monitiors[symbol] = YStockMonitor(symbol)
+    if tokens["LINE_TOKEN"] != "" and symbol not in monitiors:
+        notifier = LineNotifier(tokens["LINE_TOKEN"])
+        handler = PriceHandeler(
+            notifier, symbol, compare=compare, price=target_price, condition=target
+        )
+
+        mon = monitiors[symbol]
+        mon.setHandler(handler)
+    if tokens["TG_TOKEN"] != "":
+        notifier = TGNotifier(tokens["TG_TOKEN"], tokens["TG_USER"])
+        handler = PriceHandeler(
+            notifier,
+            symbol,
+            compare=compare,
+            price=target_price,
+            condition=target,
+        )
+        mon = monitiors[symbol]
+        mon.setHandler(handler)
+
+
+def main():
+    log.setLevel(logging.DEBUG)
+    args = getArgs()
+    finmind_token = args.finmind_token
+    tokens = {
+        "LINE_TOKEN": args.line_token,
+        "TG_TOKEN": args.tg_token,
+        "TG_USER": args.to_user,
+    }
+    config = args.config
+    with open(config, "r") as f:
         cfg = json.load(f)
     if args.country == "tw":
         history = TWHistoryData(finmind_token)
     else:
         history = USHistoryData(finmind_token)
     history.setDebug()
-    monitiors = dict()
     for stock in cfg[args.country]:
         try:
             target = getTargetPrice(stock["target"])
-            percent = True if target[-1] else False
-            addition_num = target[-2] if target[-2] else 0
-            addition_compare = target[2] if target[2] else "="
+            percent = bool(target[-1])
+            addition_num = target[-2] or 0
+            addition_compare = target[2] or "="
             compare = target[0]
             strategy = target[1]
         except:
@@ -65,51 +108,16 @@ def main():
         log.info("%s of %s is %.2f" % (strategy, symbol, p))
         target_p = p
         if addition_compare != "=":
-            if percent:
-                add_p = (int(addition_num) * p) / 100
-            else:
-                add_p = float(addition_num)
+            add_p = (int(addition_num) * p) / 100 if percent else float(addition_num)
             if addition_compare == "+":
                 target_p += add_p
             else:
                 target_p -= add_p
         log.info("Target price of %s is %s %.2f" % (symbol, compare, target_p))
-        if "line" in stock:
-            notifier = LineNotifier(stock["line"])
-            handler = PriceHandeler(
-                notifier,
-                symbol,
-                compare=compare,
-                price=target_p,
-                condition=stock["target"],
-            )
-            if args.country == "tw":
-                symbol = symbol + ".tw"
-
-            if symbol in monitiors:
-                mon = monitiors[symbol]
-            else:
-                monitiors[symbol] = YStockMonitor(symbol)
-                mon = monitiors[symbol]
-            mon.setHandler(handler)
-        if "TG_BOT" in stock:
-            notifier = TGNotifier(stock["TG_BOT"], stock["TG_USER"])
-            handler = PriceHandeler(
-                notifier,
-                symbol,
-                compare=compare,
-                price=target_p,
-                condition=stock["target"],
-            )
-            # Transfer symbol for Yahoo finance
-            if args.country == "tw":
-                symbol = symbol + ".tw"
-            if symbol in monitiors:
-                mon = monitiors[symbol]
-            else:
-                monitiors[symbol] = YStockMonitor(symbol)
-                mon = monitiors[symbol]
-            mon.setHandler(handler)
+        # Transfer symbol for Yahoo finance
+        if args.country == "tw":
+            symbol = f"{symbol}.tw"
+        startNotifier(tokens, symbol, target_p, compare, target)
     for m in monitiors.values():
         m.monitor()
     try:
