@@ -1,0 +1,30 @@
+{
+  "tw": [
+    {
+      "symbol": "0050",
+      "target": "<LBBANDS"
+    },
+    {
+      "symbol": "0050",
+      "target": ">=UBBANDS"
+    }
+  ],
+  "us": [
+    {
+      "symbol": "TSLA",
+      "target": "<LBBANDS"
+    },
+    {
+      "symbol": "TSLA",
+      "target": ">UBBANDS"
+    },
+    {
+      "symbol": "MSFT",
+      "target": "<LBBANDS"
+    },
+    {
+      "symbol": "MSFT",
+      "target": ">UBBANDS"
+    }
+  ]
+}
