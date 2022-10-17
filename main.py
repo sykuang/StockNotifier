@@ -8,7 +8,7 @@ import logging
 import json
 import argparse
 import re
-from os import exist
+from os.path import exists
 from lib.YStockMonitor import YStockMonitor
 
 logging.basicConfig()
@@ -30,13 +30,13 @@ def getTargetPrice(price: str):
 def getArgs():
     parser = argparse.ArgumentParser()
     parser.add_argument("country", help="Stock contory", choices=["tw", "us"])
-    parser.add_argument("--line_token", type=str, defaut="")
+    parser.add_argument("--line_token", type=str, default="")
     parser.add_argument("--tg_token", type=str, default="")
     parser.add_argument("--tg_user", type=str, default="")
     parser.add_argument("config", help="path to config file", type=str)
     parser.add_argument("--finmind_token", type=str, default=None)
     args = parser.parse_args()
-    if not exist(args.conifg):
+    if not exists(args.config):
         print("%s not exist!")
         exit(1)
     return args
@@ -76,7 +76,7 @@ def main():
     tokens = {
         "LINE_TOKEN": args.line_token,
         "TG_TOKEN": args.tg_token,
-        "TG_USER": args.to_user,
+        "TG_USER": args.tg_user,
     }
     config = args.config
     with open(config, "r") as f:
