@@ -9,6 +9,8 @@ from datetime import datetime, timedelta, timezone
 import logging
 import threading
 from pandas import to_datetime
+import pandas_market_calendars as mcal
+import pytz
 
 lock = threading.Lock()
 glog = logging.getLogger("getPrice")
@@ -16,19 +18,35 @@ glog = logging.getLogger("getPrice")
 
 class YStockMonitor(StockMonitor):
     @staticmethod
-    def getPrice(symbol, handlers, debug=False):
+    def getPrice(symbol: str, handlers, debug=False):
+        if not symbol.endswith(".tw"):
+            nyse = mcal.get_calendar("NYSE")
+            try:
+                nowtime = pytz.UTC.localize(datetime.now())
+                sch = nyse.schedule(start_date=nowtime, end_date=nowtime)
+                opentime = sch.iloc[0][0].to_pydatetime()
+                closetime = sch.iloc[0][1].to_pydatetime()
+                if nowtime < opentime or nowtime > closetime:
+                    log.debug("Market is closed")
+                    return
+            except IndexError:
+                log.debug("Market is closed")
+                return
+
         if debug:
-            start_date = datetime.now() - timedelta(days=8)
+            # yfinance cannot request 1 min interval if periods is larger than 7 days
+            start_date = datetime.now() - timedelta(days=4)
         else:
             start_date = datetime.now() - timedelta(days=1)
+        start_date = start_date.strftime("%Y-%m-%d")
         try:
             lock.acquire()
             data = yf.download(
                 tickers=symbol,
                 start=start_date,
                 group_by="ticker",
-                auto_adjust=False,
                 progress=False,
+                interval="1m",
             )
             lock.release()
             if len(data):
@@ -41,6 +59,8 @@ class YStockMonitor(StockMonitor):
                 today = datetime.now(tz)
                 if trade_date.date() >= today.date():
                     price = data["Close"].iloc[-1]
+                    if debug:
+                        log.debug(price)
                     for h in handlers:
                         h.notify(price)
                 else:
