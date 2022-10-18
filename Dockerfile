@@ -15,4 +15,4 @@ COPY  main.py lib  example/config.json /root/TWStockNotifier/
 COPY  lib /root/TWStockNotifier/lib
 
 
-CMD ["/bin/zsh"]
+CMD ["python3", "./main.py", "tw", "./config.json"]
