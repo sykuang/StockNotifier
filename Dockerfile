@@ -9,10 +9,11 @@ RUN apk add --no-cache --virtual .build-deps \
   g++ \
   make && \
   pip --no-cache-dir install -r requirements.txt && \
-  apk add --no-cache zsh
+# Add yacron for running as server
+  pip --no-cache-dir install yacron
 
-COPY  main.py lib  example/config.json /root/TWStockNotifier/
+COPY  main.py docker/crontab.yaml example/config.json /root/TWStockNotifier/
 COPY  lib /root/TWStockNotifier/lib
 
 
-CMD ["python3", "./main.py", "tw", "./config.json"]
+CMD ["yacron", "-c", "/root/TWStockNotifier//crontab.yaml"]
