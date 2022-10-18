@@ -22,15 +22,15 @@ class YStockMonitor(StockMonitor):
         if not symbol.endswith(".tw"):
             nyse = mcal.get_calendar("NYSE")
             try:
-                nowtime = pytz.UTC.localize(datetime.now())
+                nowtime = datetime.now(timezone.utc)
                 sch = nyse.schedule(start_date=nowtime, end_date=nowtime)
                 opentime = sch.iloc[0][0].to_pydatetime()
                 closetime = sch.iloc[0][1].to_pydatetime()
                 if nowtime < opentime or nowtime > closetime:
-                    log.debug("Market is closed")
+                    glog.debug("Market is closed")
                     return
             except IndexError:
-                log.debug("Market is closed")
+                glog.debug("Market is closed")
                 return
 
         if debug:
@@ -55,12 +55,12 @@ class YStockMonitor(StockMonitor):
                 if ".tw" in symbol:
                     tz = timezone(timedelta(hours=8))
                 else:
-                    tz = timezone(timedelta(hours=-5))
+                    tz = pytz.timezone('America/New_York')
                 today = datetime.now(tz)
                 if trade_date.date() >= today.date():
                     price = data["Close"].iloc[-1]
                     if debug:
-                        log.debug(price)
+                        glog.debug(price)
                     for h in handlers:
                         h.notify(price)
                 else:
