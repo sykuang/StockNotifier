@@ -9,6 +9,7 @@ import json
 import argparse
 import re
 from os.path import exists
+from os import getenv
 from lib.YStockMonitor import YStockMonitor
 
 logging.basicConfig()
@@ -27,7 +28,7 @@ def getTargetPrice(price: str):
     return g
 
 
-def getArgs():
+def getArgs() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("country", help="Stock contory", choices=["tw", "us"])
     parser.add_argument("--line_token", type=str, default="")
@@ -69,15 +70,28 @@ def startNotifier(
         mon.setHandler(handler)
 
 
+def getTokens(args: argparse.Namespace) -> dict:
+    # Get token from environment variables first.
+    tokens = {
+        "LINE_TOKEN": getenv("LINE_TOKEN"),
+        "TG_TOKEN": getenv("TG_TOKEN"),
+        "TG_USER": getenv("TG_USER"),
+    }
+    if args.line_token:
+        tokens["LINE_TOKEN"] = args.line_token
+    if args.tg_token:
+        tokens["TG_TOKEN"] = args.tg_token
+    if args.tg_user:
+        tokens["TG_USER"] = args.tg_user
+
+    return tokens
+
+
 def main():
     log.setLevel(logging.DEBUG)
     args = getArgs()
     finmind_token = args.finmind_token
-    tokens = {
-        "LINE_TOKEN": args.line_token,
-        "TG_TOKEN": args.tg_token,
-        "TG_USER": args.tg_user,
-    }
+    tokens = getTokens(args)
     config = args.config
     with open(config, "r") as f:
         cfg = json.load(f)
@@ -121,8 +135,8 @@ def main():
     for m in monitiors.values():
         m.monitor()
     try:
-        # Run only 8 hours
-        sleep(60 * 60 * 8)
+        # Run only 6 hours
+        sleep(60 * 60 * 6)
     except KeyboardInterrupt:
         pass
     except Exception as e:
