@@ -57,7 +57,7 @@ def startNotifier(
 
         mon = monitiors[symbol]
         mon.setHandler(handler)
-    if tokens["TG_TOKEN"] != "":
+    if tokens["TG_TOKEN"] != "" and tokens["TG_USER"] != "":
         notifier = TGNotifier(tokens["TG_TOKEN"], tokens["TG_USER"])
         handler = PriceHandeler(
             notifier,
@@ -73,9 +73,9 @@ def startNotifier(
 def getTokens(args: argparse.Namespace) -> dict:
     # Get token from environment variables first.
     tokens = {
-        "LINE_TOKEN": getenv("LINE_TOKEN"),
-        "TG_TOKEN": getenv("TG_TOKEN"),
-        "TG_USER": getenv("TG_USER"),
+        "LINE_TOKEN": getenv("LINE_TOKEN", default=""),
+        "TG_TOKEN": getenv("TG_TOKEN", default=""),
+        "TG_USER": getenv("TG_USER", default=""),
     }
     if args.line_token:
         tokens["LINE_TOKEN"] = args.line_token
