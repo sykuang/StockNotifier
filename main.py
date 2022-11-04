@@ -132,7 +132,7 @@ def main():
         # Transfer symbol for Yahoo finance
         if args.country == "tw":
             symbol = f"{symbol}.tw"
-        params.append(tokens, symbol, target_p, compare, target)
+        params.append([tokens, symbol, target_p, compare, target])
     for p in params:
         startNotifier(p[0], p[1], p[2], p[3], p[4])
     for m in monitiors.values():
