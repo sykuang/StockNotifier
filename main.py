@@ -8,6 +8,7 @@ import logging
 import json
 import argparse
 import re
+import sys
 from os.path import exists
 from os import getenv
 from lib.YStockMonitor import YStockMonitor
@@ -87,8 +88,23 @@ def getTokens(args: argparse.Namespace) -> dict:
     return tokens
 
 
-def main():
+# https://stackoverflow.com/questions/16061641/python-logging-split-between-stdout-and-stderr
+class InfoFilter(logging.Filter):
+    def filter(self, rec):
+        return rec.levelno in (logging.DEBUG, logging.INFO)
+
+
+def setLoggerFilter():
     log.setLevel(logging.DEBUG)
+    h1 = logging.StreamHandler(sys.stdout)
+    h1.setLevel(logging.DEBUG)
+    h1.addFilter(InfoFilter())
+    h2 = logging.StreamHandler()
+    h2.setLevel(logging.WARNING)
+    log.addHandler(h1)
+    log.addHandler(h2)
+
+def main():
     args = getArgs()
     finmind_token = args.finmind_token
     tokens = getTokens(args)
