@@ -51,6 +51,7 @@ def startNotifier(
     if symbol not in monitiors:
         monitiors[symbol] = YStockMonitor(symbol)
     if tokens["LINE_TOKEN"] != "" and symbol not in monitiors:
+        log.debug(f"Starting LineNotifier for {symbol}: Target Price {target_price}")
         notifier = LineNotifier(tokens["LINE_TOKEN"])
         handler = PriceHandeler(
             notifier, symbol, compare=compare, price=target_price, condition=target
@@ -59,6 +60,7 @@ def startNotifier(
         mon = monitiors[symbol]
         mon.setHandler(handler)
     if tokens["TG_TOKEN"] != "" and tokens["TG_USER"] != "":
+        log.debug(f"Starting TGNotifier for {symbol}: Target Price {target_price}")
         notifier = TGNotifier(tokens["TG_TOKEN"], tokens["TG_USER"])
         handler = PriceHandeler(
             notifier,
