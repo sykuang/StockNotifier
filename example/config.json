@@ -25,6 +25,10 @@
     {
       "symbol": "MSFT",
       "target": ">UBBANDS"
+    },
+    {
+      "symbol": "ROKU",
+      "target": "<=40"
     }
   ]
 }
