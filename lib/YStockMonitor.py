@@ -2,7 +2,7 @@ import yfinance as yf
 
 try:
     from StockMonitor import StockMonitor
-except:
+except Exception:
     from .StockMonitor import StockMonitor
 import asyncio
 from datetime import datetime, timedelta, timezone
@@ -10,7 +10,6 @@ import logging
 import threading
 from pandas import to_datetime
 import pandas_market_calendars as mcal
-import pytz
 
 lock = threading.Lock()
 glog = logging.getLogger("getPrice")
@@ -51,12 +50,7 @@ class YStockMonitor(StockMonitor):
             lock.release()
             if len(data):
                 trade_date = to_datetime(data.index.values[-1])
-                # Workaround to guess if stock is TW or US
-                if ".tw" in symbol:
-                    tz = timezone(timedelta(hours=8))
-                else:
-                    tz = pytz.timezone('America/New_York')
-                today = datetime.now(tz)
+                today = datetime.now(timezone.utc)
                 if trade_date.date() >= today.date():
                     price = data["Close"].iloc[-1]
                     if debug:
@@ -64,12 +58,11 @@ class YStockMonitor(StockMonitor):
                     for h in handlers:
                         h.notify(price)
                 else:
-                    glog.warning("Data(%s) is old;Today is %s" % (trade_date, today))
+                    glog.warning(f"Data({trade_date}) is old;Today is {today}")
         except KeyError:
             glog.error("Error keyerror skip!")
         except Exception as e:
-            glog.error("Error:%s" % str(e))
-            pass
+            glog.error(f"Error:{str(e)}")
         finally:
             # Update data every 30 seconds
             loop = asyncio.get_event_loop()
@@ -98,14 +91,15 @@ class YStockMonitor(StockMonitor):
 
 if __name__ == "__main__":
     from time import sleep
+    from sys import argv
 
+    country = argv[1]
     log = logging.getLogger("main")
     log.setLevel(logging.DEBUG)
-    stock = YStockMonitor("2454.tw")
+    stock = YStockMonitor("2454.tw") if country == "tw" else YStockMonitor("MSFT")
     stock.setDebug()
     stock.monitor()
     log.info("quit")
     sleep(3 * 30)
     log.info("quit")
     stock.quit()
-    pass
