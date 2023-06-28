@@ -81,6 +81,8 @@ class HistoryData:
                 return self.getBBANDS(symbol)[2].iloc[-1]
             case "MA20":
                 return self.getMA(symbol).iloc[-1]
+            case "FIXED":
+                return
             case _:
                 self._log.error("Wrong strategy")
                 raise KeyError

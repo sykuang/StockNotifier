@@ -28,7 +28,7 @@
     },
     {
       "symbol": "ROKU",
-      "target": "<=40"
+      "target": "<=FIXED40"
     }
   ]
 }

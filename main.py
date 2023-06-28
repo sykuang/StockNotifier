@@ -21,7 +21,7 @@ monitiors = {}
 
 def getTargetPrice(price: str):
     regx = re.compile(
-        "(<=|>=|<|>|=){1}(MA20|MA5|MA10|UBBANDS|LBBANDS|){1}([+-]){0,1}([1-9]{0,1}[0-9]{0,1})(%){0,1}"
+        "(<=|>=|<|>|=){1}(MA20|MA5|MA10|UBBANDS|LBBANDS|FIXED|){1}([+-]){0,1}([1-9]{0,1}[0-9]{0,1})(%){0,1}"
     )
     r = regx.match(price)
     g = r.groups()
@@ -106,6 +106,7 @@ def setLoggerFilter():
     log.addHandler(h1)
     log.addHandler(h2)
 
+
 def main():
     args = getArgs()
     finmind_token = args.finmind_token
@@ -137,7 +138,10 @@ def main():
             raise
         except:
             raise
-        p = history.getPrice(strategy, symbol)
+        if strategy != "FIXED":
+            p = history.getPrice(strategy, symbol)
+        else:
+            p = float(addition_num)
         log.info("%s of %s is %.2f" % (strategy, symbol, p))
         target_p = p
         if addition_compare != "=":
